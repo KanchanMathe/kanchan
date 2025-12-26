@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobsy - Your AI Career Partner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ... (Same Styles as before) ... */
+        :root { --emerald-glow: rgba(16, 185, 129, 0.15); --blue-glow: rgba(59, 130, 246, 0.12); --purple-glow: rgba(168, 85, 247, 0.1); }
+        body { font-family: 'Montserrat', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; overflow-x: hidden; }
+        .mesh-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, var(--emerald-glow) 0, transparent 40%), radial-gradient(circle at 100% 0%, var(--blue-glow) 0, transparent 40%), radial-gradient(circle at 100% 100%, var(--purple-glow) 0, transparent 40%), radial-gradient(circle at 0% 100%, var(--emerald-glow) 0, transparent 40%); animation: mesh-move 20s ease-in-out infinite alternate; }
+        @keyframes mesh-move { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.1) translate(2%, 2%); } }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .markdown-body ul, .markdown-body ol { padding-left: 1.5rem; margin-bottom: 1rem; list-style-type: disc; }
+        .markdown-body h1, .markdown-body h2 { margin-top: 1.5rem; margin-bottom: 1rem; font-weight: 800; }
+        .markdown-body strong { font-weight: 800; color: #1e293b; }
+        .scanner-line { position: absolute; width: 100%; height: 6px; background: linear-gradient(to right, transparent, #10b981, transparent); box-shadow: 0 0 20px #10b981; animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; z-index: 10; }
+        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="mesh-bg"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Same as before) ---
+        const Icons = {
+            Layout: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>,
+            Zap: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Map: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>,
+            Brain: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+            MessageSquare: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+            Briefcase: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            Target: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            Sparkles: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
+            Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Printer: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>,
+            Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            ShieldCheck: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>,
+            XCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+        };
+        const IconWrapper = ({ icon: IconName, className }) => {
+            const Comp = Icons[IconName]; return Comp ? <span className={className}><Comp /></span> : null;
+        };
+
+        const MarkdownRenderer = ({ content }) => (<div className="markdown-body text-slate-700 leading-relaxed whitespace-pre-wrap">{content}</div>);
+        const SAMPLE_RESUME = `Jane Doe\n(555) 987-6543 | jane.doe@email.com\n\nSummary\nHighly experienced Product Manager with 8 years in the SaaS industry...`;
+        const SAMPLE_JOB_DESC = `Job Title: Principal Product Manager, AI Solutions...`;
+
+        const APTITUDE_QUESTIONS = [
+            { q: 1, text: "If a train running at 50 km/h crosses a man in 10 seconds, what is the length of the train?", options: { A: "138.9 m", B: "145.5 m", C: "160.2 m", D: "125.8 m" }, correct: "A" },
+            { q: 2, text: "Choose the opposite of 'Frugal'.", options: { A: "Economical", B: "Wasteful", C: "Thrifty", D: "Miserly" }, correct: "B" },
+            { q: 3, text: "Next number: 3, 7, 15, 31, 63...", options: { A: "127", B: "128", C: "129", D: "131" }, correct: "A" }
+        ];
+
+        // --- BACKEND API CALL ---
+        // This function now calls YOUR local server, not Google directly
+       // index.html ke andar ye change karein
+const callBackend = async (prompt) => {
+    try {
+        // Dhyaan dein: Port 5001 hona chahiye
+        const response = await fetch('http://localhost:8080/api/generate', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Server Error");
+        return data.text;
+    } catch (err) {
+        console.error(err);
+        throw new Error("Connection failed! Make sure your Node terminal is still open.");
+    }
+};
+
+        const AptitudeTest = () => {
+            const [currentQ, setCurrentQ] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showResult, setShowResult] = useState(false);
+            const [selected, setSelected] = useState(null);
+
+            const handleAnswer = (key) => {
+                setSelected(key);
+                if (key === APTITUDE_QUESTIONS[currentQ].correct) setScore(s => s + 1);
+                setTimeout(() => {
+                    if (currentQ < APTITUDE_QUESTIONS.length - 1) { setCurrentQ(q => q + 1); setSelected(null); } 
+                    else setShowResult(true);
+                }, 800);
+            };
+
+            if (showResult) return (
+                <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-amber-50 text-center fade-in">
+                    <h3 className="text-3xl font-black text-slate-900 mb-4">Score: {Math.round((score/APTITUDE_QUESTIONS.length)*100)}%</h3>
+                    <button onClick={() => { setCurrentQ(0); setScore(0); setShowResult(false); setSelected(null); }} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">Retake</button>
+                </div>
+            );
+            const q = APTITUDE_QUESTIONS[currentQ];
+            return (
+                <div className="max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 fade-in">
+                    <div className="flex justify-between items-center mb-6"><span className="text-xs font-bold uppercase text-amber-500">Q{currentQ + 1}</span></div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-8">{q.text}</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        {Object.entries(q.options).map(([key, val]) => (
+                            <button key={key} onClick={() => handleAnswer(key)} className={`p-4 rounded-xl text-left border-2 font-medium transition-all ${selected === key ? (key === q.correct ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-slate-100 hover:border-amber-400'}`}>
+                                <span className="font-bold mr-2">{key}.</span> {val}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('match');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            
+            const [resume, setResume] = useState(SAMPLE_RESUME);
+            const [jobDesc, setJobDesc] = useState(SAMPLE_JOB_DESC);
+            const [matchResult, setMatchResult] = useState(null);
+            const [role, setRole] = useState('');
+            const [roadmapResult, setRoadmapResult] = useState(null);
+            const [interviewResult, setInterviewResult] = useState(null);
+
+            const handleAI = async (type) => {
+                setLoading(true); setError(null);
+                try {
+                    let prompt = "";
+                    if (type === 'match') {
+                         if (!resume || !jobDesc) throw new Error("Fill in all fields");
+                         prompt = `Analyze this resume against the job description. Provide Match Score (%), Top Skills, Missing Skills, and advice in Markdown. Resume: ${resume} Job: ${jobDesc}`;
+                         const res = await callBackend(prompt);
+                         setMatchResult(res);
+                    } else if (type === 'roadmap') {
+                        if (!role) throw new Error("Enter a role");
+                        prompt = `Create a 12-month career roadmap for a ${role}. Use Markdown.`;
+                        const res = await callBackend(prompt);
+                        setRoadmapResult(res);
+                    } else if (type === 'interview') {
+                        if (!role) throw new Error("Enter a role");
+                        prompt = `Create an interview guide for a ${role}. Include 3 technical and 3 behavioral questions. Use Markdown.`;
+                        const res = await callBackend(prompt);
+                        setInterviewResult(res);
+                    }
+                } catch (e) { setError(e.message); }
+                setLoading(false);
+            };
+
+            const TabButton = ({ id, label, icon, color }) => (
+                <button onClick={() => { setActiveTab(id); setError(null); }} className={`relative px-5 py-2.5 rounded-xl font-bold transition-all flex items-center space-x-2 ${activeTab === id ? 'text-white' : 'text-slate-600 hover:bg-slate-100/50'}`}>
+                    {activeTab === id && <div className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-r ${color}`}></div>}
+                    <IconWrapper icon={icon} className="w-4 h-4" />
+                    <span className="hidden sm:inline capitalize">{label}</span>
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+                    <nav className="flex flex-col md:flex-row items-center justify-between py-8 gap-6 z-50 sticky top-0 bg-white/40 backdrop-blur-md -mx-4 px-8 mb-8">
+                        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('match')}>
+                            <div className="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-2xl shadow-lg"><IconWrapper icon="Layout" className="text-white" /></div>
+                            <div><h1 className="text-3xl font-black text-slate-900 tracking-tighter">Jobsy<span className="text-emerald-500">.</span></h1><p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Career OS</p></div>
+                        </div>
+                        <div className="flex glass-panel p-1.5 rounded-2xl border border-slate-200/50 shadow-sm">
+                            <TabButton id="match" label="Match" icon="Zap" color="from-emerald-500 to-teal-500" />
+                            <TabButton id="roadmap" label="Roadmap" icon="Map" color="from-blue-500 to-indigo-500" />
+                            <TabButton id="aptitude" label="Aptitude" icon="Brain" color="from-amber-500 to-orange-500" />
+                            <TabButton id="interview" label="Interview" icon="MessageSquare" color="from-purple-500 to-pink-500" />
+                        </div>
+                    </nav>
+
+                    {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-100 flex items-center gap-3"><IconWrapper icon="XCircle" className="w-5 h-5"/> {error}</div>}
+
+                    <div className="fade-in" key={activeTab}>
+                        {activeTab === 'match' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                <div className="lg:col-span-5 space-y-8">
+                                    <div className="space-y-4"><h2 className="text-5xl font-black text-slate-900 leading-tight">Match Your <span className="text-emerald-500 underline decoration-emerald-200">Potential</span></h2><p className="text-slate-500 text-lg leading-relaxed font-medium">Analyze your resume against any job description.</p></div>
+                                    <div className="space-y-6">
+                                        <div className="space-y-2"><label className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><IconWrapper icon="Briefcase" className="w-4 h-4"/> Your Resume</label><div className="relative group"><textarea value={resume} onChange={(e) => setResume(e.target.value)} className="w-full h-48 p-5 bg-white border-2 border-slate-100 rounded-[2rem] focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 shadow-sm" placeholder="Paste resume content..." />{loading && <div className="scanner-line rounded-full" />}</div></div>
+                                        <div className="space-y-2"><label className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><IconWrapper icon="Target" className="w-4 h-4"/> Job Requirements</label><textarea value={jobDesc} onChange={(e) => setJobDesc(e.target.value)} className="w-full h-48 p-5 bg-white border-2 border-slate-100 rounded-[2rem] focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 shadow-sm" placeholder="Paste job description..." /></div>
+                                        <button onClick={() => handleAI('match')} disabled={loading} className="w-full bg-slate-900 text-white font-black py-5 rounded-[2rem] shadow-xl hover:shadow-emerald-900/10 transition-all flex items-center justify-center space-x-3 text-lg hover:scale-[1.02]">{loading ? <span>Scanning...</span> : <><IconWrapper icon="Sparkles" className="w-6 h-6 text-emerald-400" /><span>Start Optimization</span></>}</button>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-7">
+                                    {matchResult ? (
+                                        <div className="bg-white/80 backdrop-blur-sm border-2 border-slate-100 p-10 rounded-[3rem] shadow-2xl h-full fade-in"><div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50"><h3 className="text-2xl font-black text-slate-900">Report</h3><button onClick={() => setMatchResult(null)} className="text-slate-400 hover:text-red-500"><IconWrapper icon="Trash2" className="w-6 h-6"/></button></div><MarkdownRenderer content={matchResult} /></div>
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center p-12 border-4 border-dashed border-slate-200 rounded-[3rem]"><div className="text-center space-y-6 opacity-40"><div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto"><IconWrapper icon="Briefcase" className="w-12 h-12 text-slate-400" /></div><p className="font-black text-xl text-slate-400">Analysis results will appear here</p></div></div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'roadmap' && (
+                            <div className="max-w-4xl mx-auto space-y-12">
+                                <div className="text-center space-y-4"><h2 className="text-5xl font-black text-slate-900">Build Your <span className="text-blue-500">Path</span></h2><p className="text-slate-500 text-lg">Tell us where you want to go.</p></div>
+                                <div className="relative group max-w-2xl mx-auto"><input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="Target Role (e.g. Senior Data Scientist)" className="w-full p-8 pl-16 bg-white border-2 border-slate-100 focus:border-blue-500 rounded-[2.5rem] outline-none transition-all font-bold text-slate-900 text-xl shadow-xl" /><span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300"><IconWrapper icon="Search" className="w-8 h-8"/></span><button onClick={() => handleAI('roadmap')} disabled={loading} className="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg hover:scale-105 transition-transform">{loading ? '...' : 'Generate'}</button></div>
+                                {roadmapResult && (<div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-blue-50 fade-in"><div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black text-slate-900 flex items-center gap-3"><IconWrapper icon="Map" className="w-8 h-8 text-blue-500"/> Blueprint</h3></div><MarkdownRenderer content={roadmapResult} /></div>)}
+                            </div>
+                        )}
+                        {activeTab === 'aptitude' && <AptitudeTest />}
+                        {activeTab === 'interview' && (
+                            <div className="max-w-4xl mx-auto space-y-12">
+                                <div className="text-center space-y-4"><h2 className="text-5xl font-black text-slate-900">Ace the <span className="text-purple-500">Interview</span></h2><p className="text-slate-500 text-lg">Practice questions for your role.</p></div>
+                                <div className="relative group max-w-2xl mx-auto"><input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role (e.g. UX Designer)" className="w-full p-8 pl-16 bg-white border-2 border-slate-100 focus:border-purple-500 rounded-[2.5rem] outline-none transition-all font-bold text-slate-900 text-xl shadow-xl" /><span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300"><IconWrapper icon="Search" className="w-8 h-8"/></span><button onClick={() => handleAI('interview')} disabled={loading} className="absolute right-4 top-1/2 -translate-y-1/2 bg-purple-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg hover:scale-105 transition-transform">{loading ? '...' : 'Simulate'}</button></div>
+                                {interviewResult && (<div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-purple-50 fade-in"><div className="flex justify-between items-center mb-10"><h3 className="text-2xl font-black text-slate-900 flex items-center gap-3"><IconWrapper icon="Star" className="w-8 h-8 text-purple-500"/> Strategy</h3></div><MarkdownRenderer content={interviewResult} /></div>)}
+                            </div>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20 mt-12">
+                        {[ { icon: "ShieldCheck", title: "Privacy First", desc: "Your data is not stored." }, { icon: "Zap", title: "AI Native", desc: "Powered by Gemini." }, { icon: "Star", title: "Personalized", desc: "Tailored to your profile." } ].map((feat, i) => (
+                            <div key={i} className="glass-panel p-8 rounded-[2rem] flex items-start space-x-4"><div className="p-3 bg-white rounded-xl shadow-sm"><IconWrapper icon={feat.icon} className="text-slate-900 w-6 h-6"/></div><div><h4 className="font-black text-slate-900">{feat.title}</h4><p className="text-sm text-slate-500 font-medium">{feat.desc}</p></div></div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
+    </script>
+</body>
+</html>
